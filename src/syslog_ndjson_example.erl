@@ -1,19 +1,27 @@
 -module(syslog_ndjson_example).
--export([to_file/2]).
+-export([to_file/2, to_file/3]).
 
 -include("syslog_ndjson.hrl").
 
+%% @doc Write a number of syslog entries to a file without validation
 to_file(NumOfEntries, Filename) when is_integer(NumOfEntries) ->
+    to_file(NumOfEntries, Filename, false).
+
+%% @doc Write a number of syslog entries to a file with optional validation
+to_file(NumOfEntries, Filename, Validate) when
+    is_integer(NumOfEntries), is_boolean(Validate)
+->
     {ok, File} = file:open(Filename, [write, raw]),
     try
         lists:foreach(
-            fun(I) -> write_entry(I, File) end, lists:seq(1, NumOfEntries)
+            fun(I) -> write_entry(I, File, Validate) end,
+            lists:seq(1, NumOfEntries)
         )
     after
         file:close(File)
     end.
 
-write_entry(I, File) ->
+write_entry(I, File, Validate) ->
     Record = #syslog_entry{
         priority = 13 rem I + 1,
         facility = I rem 10 + 1,
@@ -33,6 +41,20 @@ write_entry(I, File) ->
         message =
             "Authentication failure for user 'john" ++ integer_to_list(I) ++ "'"
     },
+
+    % Validate the record if requested
+    case Validate of
+        true ->
+            case syslog_ndjson_validator:validate(Record) of
+                ok ->
+                    ok;
+                {error, Errors} ->
+                    io:format("Warning: Invalid syslog record: ~p~n", [Errors])
+            end;
+        false ->
+            ok
+    end,
+
     JsonString = syslog_ndjson:to_ndjson(Record),
     file:write(File, JsonString).
 
