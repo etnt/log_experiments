@@ -19,7 +19,8 @@ test_valid() ->
         facility = 1,
         severity = 5,
         version = 1,
-        timestamp = "2023-10-27T10:00:00Z",
+        % Added milliseconds
+        timestamp = "2023-10-27T10:00:00.000Z",
         hostname = "myhost.example.com",
         app_name = "myapp",
         proc_id = "12345",
@@ -64,7 +65,8 @@ test_invalid() ->
         severity = 5,
         % Invalid - should be 1
         version = 2,
-        timestamp = "2023-10-27T10:00:00Z",
+        % Added milliseconds
+        timestamp = "2023-10-27T10:00:00.000Z",
         hostname = "myhost.example.com",
         app_name = "myapp",
         proc_id = "12345",
@@ -84,6 +86,8 @@ test_invalid() ->
         severity = 5,
         version = 1,
         % Invalid format
+
+        % Keep this invalid for testing
         timestamp = "2023/10/27 10:00:00",
         hostname = "myhost.example.com",
         app_name = "myapp",
@@ -105,7 +109,8 @@ test_invalid() ->
         facility = 1,
         severity = 5,
         version = 1,
-        timestamp = "2023-10-27T10:00:00Z",
+        % Added milliseconds
+        timestamp = "2023-10-27T10:00:00.000Z",
         hostname = "myhost.example.com",
         app_name = LongAppName,
         proc_id = "12345",
@@ -123,7 +128,8 @@ test_invalid() ->
         facility = 1,
         severity = 5,
         version = 1,
-        timestamp = "2023-10-27T10:00:00Z",
+        % Added milliseconds
+        timestamp = "2023-10-27T10:00:00.000Z",
         hostname = "myhost.example.com",
         app_name = "myapp",
         proc_id = "12345",

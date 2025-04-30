@@ -45,6 +45,7 @@ validate_entry(
     },
     StrictMode
 ) ->
+    lists:filter(fun(X) -> X =/= ok end,
     [
         % Integer validations
         validate_integer("priority", P),
@@ -66,7 +67,7 @@ validate_entry(
         % Message can be any string or null, no validation needed beyond type
         validate_maybe_string("message", M)
         % Remove all "ok" results, leaving only errors
-    ] -- [ok].
+    ]).
 
 %% @private Validates that a field is an integer
 -spec validate_integer(string(), any()) -> ok | binary().
@@ -120,7 +121,7 @@ validate_timestamp(Field, Value, _) ->
             % Further validate by trying to parse the timestamp
             try
                 % Ignoring the Time variable to avoid warning
-                {date, _} = httpd_util:convert_request_date(ValueStr),
+                {_Date, _Time, _TZone} = parse_rfc5424_timestamp(ValueStr),
                 ok
             catch
                 _:_ ->
@@ -135,6 +136,41 @@ validate_timestamp(Field, Value, _) ->
                 io_lib:format("~s doesn't match ISO 8601/RFC 3339 format: ~s", [
                     Field, ValueStr
                 ])
+            )
+    end.
+
+parse_rfc5424_timestamp(String) ->
+    case re:run(String, "^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})(\\.(\\d+))?([+-](\\d{2}):(\\d{2})|Z)$",
+         [{capture, all_but_first, list}])
+    of
+        {match, [YearStr, MonthStr, DayStr, HourStr, MinuteStr, SecondStr, _, MillisecondsStr, TimezoneOffset]} ->
+            Year = list_to_integer(YearStr),
+            Month = list_to_integer(MonthStr),
+            Day = list_to_integer(DayStr),
+            Hour = list_to_integer(HourStr),
+            Minute = list_to_integer(MinuteStr),
+            Second = list_to_integer(SecondStr),
+            Milliseconds = case MillisecondsStr of
+                               "" -> 0;
+                               MS -> list_to_integer(MS)
+                           end,
+            % Handle TimezoneOffset ('Z' or '+HH:MM' or '-HH:MM')
+            Timezone = case TimezoneOffset of
+                "Z" -> 0;
+                [Sign|Rest] ->
+                    % Extract hours and minutes from the timezone offset
+                    [OffsetHours, OffsetMinutes] = string:tokens(Rest, ":"),
+                    OffsetInMinutes = list_to_integer(OffsetHours) * 60 + 
+                                      list_to_integer(OffsetMinutes),
+                    case Sign of
+                        $+ -> OffsetInMinutes;
+                        $- -> -OffsetInMinutes
+                    end
+            end,
+            {{date, {Year, Month, Day}}, {time, {Hour, Minute, Second, Milliseconds}}, {timezone, Timezone}};
+        _ ->
+            list_to_binary(
+                io_lib:format("invalid_rfc5424_timestamp format: ~s", [String])
             )
     end.
 
