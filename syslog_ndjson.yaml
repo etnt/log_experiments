@@ -1,0 +1,88 @@
+openapi: 3.0.0
+info:
+  title: BSD Syslog (RFC 5424) Entry
+  version: v1.0.0
+  description: OpenAPI specification for a single BSD Syslog (RFC 5424) entry.
+
+components:
+  schemas:
+    SyslogEntry:
+      type: object
+      properties:
+        priority:
+          type: integer
+          description: The numerical priority of the message, calculated as (facility * 8) + severity.
+          example: 13
+        facility:
+          type: integer
+          description: The facility code of the message source.
+          example: 1
+        severity:
+          type: integer
+          description: The severity level of the message.
+          example: 5
+        version:
+          type: integer
+          description: The version of the syslog protocol. For RFC 5424, this should be 1.
+          example: 1
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp when the message was generated. Format is YYYY-MM-DDTHH:MM:SSZ or YYYY-MM-DDTHH:MM:SS.fractionZ.
+          example: "2023-10-27T10:00:00Z"
+        hostname:
+          type: string
+          nullable: true
+          description: The hostname or IP address of the message originator. Can be null.
+          example: "myhost.example.com"
+        app_name:
+          type: string
+          nullable: true
+          description: The name of the application that generated the message. Can be null.
+          maxLength: 48
+          example: "myapp"
+        proc_id:
+          type: string
+          nullable: true
+          description: The process ID associated with the message. Can be null.
+          maxLength: 128
+          example: "12345"
+        msg_id:
+          type: string
+          nullable: true
+          description: A structured message ID, providing more context. Can be null.
+          maxLength: 32
+          example: "AUTHPRIV"
+        structured_data:
+          type: object
+          nullable: true
+          description: Structured data elements, represented as key-value pairs within an object. The keys represent the SD-ID.
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: string
+          example:
+            exampleSDID@32473:
+              iut: "o=eff.org,ou=iETF,dc=example,cn=Jane Doe"
+              eventSource: "Application"
+        message:
+          type: string
+          nullable: true
+          description: The actual syslog message content. Can be null.
+          example: "Authentication failure for user 'john'"
+
+paths:
+  /syslog:
+    post:
+      summary: Send a Syslog message
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyslogEntry'
+      responses:
+        '200':
+          description: Successful submission
+        '400':
+          description: Invalid Syslog entry
