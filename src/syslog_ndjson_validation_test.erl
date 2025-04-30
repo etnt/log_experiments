@@ -1,4 +1,4 @@
--module(syslog_validation_test).
+-module(syslog_ndjson_validation_test).
 
 -export([run/0, test_valid/0, test_invalid/0]).
 
